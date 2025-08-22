@@ -53,3 +53,66 @@ exports.sendOTP = async (req, res) => {
         });
     }
 };
+
+//signup
+exports.signUp = async (req, res) => {
+    
+    //data fetch from request ki body
+    const {
+        firstName,
+        lastName,
+        email,
+        password,
+        confirmPassword,
+        accountType,
+        contactNumber,
+        otp,
+    } = req.body;
+
+    //validate karlo
+    if(!firstName || !lastName || !password || !confirmPassword || !otp) {
+        return res.status(403).json({
+            success:false,
+            message:"All Fields are required"
+        })
+    }
+
+    //password match 
+    if(password !== confirmPassword) {
+        return res.status(400).json({
+            success: false,
+            message: "password and confirmpassword doesn't match"
+        })
+    }
+
+    //check user existence
+    const checkUser = await User.findOne({email});
+
+    if(checkUser) {
+        return res.status(400).json({
+            success: false,
+            message: "User Already Registered"
+        }) 
+    }
+
+    //find recent otp stored for the user
+    const recentOTP = await OTP.find({email}).sort({createdAt:-1}).limit(1);
+    console.log(recentOTP);
+
+    if(recentOTP.length == 0) {
+        return res.status(400).json({
+            success:false,
+            message:"OTP not found"
+        })
+    }
+    else if(otp !== recentOTP.otp) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid OTP"
+        })
+    }
+
+    //hash password
+    //entry create in database
+
+}
