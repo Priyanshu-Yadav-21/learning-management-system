@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const OTP = require("../models/OTP");
 const otpGenerator = require("otp-generator");
+const bcrypt = require("bcrypt");
 
 exports.sendOTP = async (req, res) => {
 
@@ -113,6 +114,23 @@ exports.signUp = async (req, res) => {
     }
 
     //hash password
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     //entry create in database
+    const profileDetails = await Profiler.create({
+        gender: null,
+        dateOfbirth:null,
+        about:null,
+        contactNumber:null,
+    });
+
+    const user = await User.create({
+        firstName,
+        lastName,
+        email,
+        contactNumber,
+        password:hashedPassword,
+        additionalDetails:profileDetails
+    })
 
 }
