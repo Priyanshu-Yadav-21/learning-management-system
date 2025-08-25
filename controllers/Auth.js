@@ -2,6 +2,8 @@ const User = require("../models/User");
 const OTP = require("../models/OTP");
 const otpGenerator = require("otp-generator");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 exports.sendOTP = async (req, res) => {
 
@@ -149,4 +151,42 @@ exports.signUp = async (req, res) => {
         })
     }
 
+}
+
+//login
+
+exports.login = async (req, res) => {
+
+    const {email, password} = req.body;
+
+    if(!user || !password) {
+        return res.status(403).json({
+            success: false,
+            message:"Fiels is required"
+        })
+    }
+
+    const user = await User.findOne({email});
+
+    if(!user) {
+        return res.status(401).json({
+            success:false,
+            message:"User is not registered, please signup first"
+        });
+    }
+
+    if(await bcrypt.compare(password, user.password)) {
+        const payload = {
+            email: user.email,
+            id: user._id,
+            role: user.role
+        }
+
+        const token = await jwt.sign(payload, process.env.JWT_SECRET, {
+            expiresIn: "2h"
+        });
+
+        user.token = token;
+        user.password = undefined;
+    }
 }
