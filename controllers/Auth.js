@@ -3,6 +3,7 @@ const OTP = require("../models/OTP");
 const otpGenerator = require("otp-generator");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 exports.sendOTP = async (req, res) => {
@@ -138,16 +139,16 @@ exports.signUp = async (req, res) => {
         })
 
         return res.status(200).json({
-            success:true,
-            message:"User is Registered Successfully",
+            success: true,
+            message: "User is Registered Successfully",
             user,
         })
     }
     catch (error) {
         console.log(error);
         return res.status(400).json({
-            success:false,
-            message:"User cannot be registered"
+            success: false,
+            message: "User cannot be registered"
         })
     }
 
@@ -157,36 +158,87 @@ exports.signUp = async (req, res) => {
 
 exports.login = async (req, res) => {
 
-    const {email, password} = req.body;
+    try {
+        const { email, password } = req.body;
 
-    if(!user || !password) {
-        return res.status(403).json({
-            success: false,
-            message:"Fiels is required"
-        })
-    }
-
-    const user = await User.findOne({email});
-
-    if(!user) {
-        return res.status(401).json({
-            success:false,
-            message:"User is not registered, please signup first"
-        });
-    }
-
-    if(await bcrypt.compare(password, user.password)) {
-        const payload = {
-            email: user.email,
-            id: user._id,
-            role: user.role
+        if (!user || !password) {
+            return res.status(403).json({
+                success: false,
+                message: "Field is required"
+            });
         }
 
-        const token = await jwt.sign(payload, process.env.JWT_SECRET, {
-            expiresIn: "2h"
-        });
+        const user = await User.findOne({ email });
 
-        user.token = token;
-        user.password = undefined;
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "User is not registered, please signup first"
+            });
+        }
+
+        if (await bcrypt.compare(password, user.password)) {
+            const payload = {
+                email: user.email,
+                id: user._id,
+                role: user.role
+            }
+
+            const token = await jwt.sign(payload, process.env.JWT_SECRET, {
+                expiresIn: "2h"
+            });
+
+            user.token = token;
+            user.password = undefined;
+
+            //create cookie and send response
+            const options = {
+                expiresIn: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+                httpOnly: true
+            }
+
+            res.cookie("token", token, options).status(200).json({
+                success: true,
+                token,
+                user,
+                message: "User Login Successfully"
+            });
+        }
+        else {
+            return res.status(401).json({
+                success: false,
+                message: "Password is Incorrect"
+            });
+        }
+    }
+    catch(error) {
+        console.log(error);
+        return res.status(500).json({
+            success:false,
+            message:"Login Failure, please try again"
+        });
+    }
+
+};
+
+
+//ResetPassword
+exports.changePassword = async (req, res) => {
+    try {
+        //fetch data
+        const {password, newPassword, confirmPassword} = req.body;
+
+        //validation
+        if(!password || !newPassword || !confirmPassword) {
+            return res.status(403).json({
+                success: false,
+                message:"password is required"
+            });
+        }
+
+        const updateToDb = await User.create({newPassword});
+    }
+    catch(error) {
+        console.log(error);
     }
 }
