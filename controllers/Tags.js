@@ -26,6 +26,23 @@ exports.createTag = async(req, res) => {
             message:"Error while creating tags"
         });
     }
+}
 
+//get allTags
 
+exports.getAllTags = async (req, res) => {
+    try {
+        const allTags = await Tags.find({}, {name:true, description:true});
+
+        return res.status(200).json({
+            succes:true,
+            message:"All tags returned Successfully"
+        });
+    }
+    catch(error) {
+        return res.status(500).json({
+            success:false,
+            message:"Error while returning tags"
+        });
+    }
 }
