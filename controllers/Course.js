@@ -21,6 +21,8 @@ exports.createCourse = async (req, res) => {
         //get instructor details
         const userId = req.user.id;
         const instructorDetails = await User.find(userId);
+        console.log("Instructor Details", instructorDetails);
+        //TODO - Verify that user id and instructor_id are same or different?
 
         if(!instructorDetails) {
             return res.status(404).json({
@@ -78,6 +80,32 @@ exports.createCourse = async (req, res) => {
         return res.status(500).json({
             success:false,
             message:"failed to create course",
+            error: error.message
+        });
+    }
+}
+
+exports.showAllCourses = async (req, res) => {
+    try {
+        const allCourses = await Course.find({}, {
+            price:true,
+            thumbnail:true,
+            instructor:true,
+            ratingAndReviews:true,
+            studentsEnrolled:true,
+        }).populate("instructor").exec();
+
+        return res.status(200).json({
+            success:true,
+            message:"All Courses fetched successfully",
+            data:allCourses
+        });
+    }
+    catch(error) {
+        console.error(error);
+        return res.status(500).json({
+            success:false,
+            message:"cannot fetch course data",
             error: error.message
         });
     }
